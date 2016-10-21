@@ -15,9 +15,6 @@ db.serialize(function () {
     }
 })
 
-//Initialisation de la réponse
-let response = []
-
 app.get('/', (req, res) => {
     // Vérification du token
     if (req.param('token') !== token) {
@@ -28,6 +25,8 @@ app.get('/', (req, res) => {
     db.all('SELECT * FROM users', (err, row) => {
         //Affichage de la liste des utilisateurs
         if (user === 'list') {
+            let response = []
+
             row.forEach((item) => {
                 //Construction de réponse sur slack
                 let userObject = {
@@ -35,13 +34,13 @@ app.get('/', (req, res) => {
                     title: item.repo,
                     title_link: `https://github.com/${item.repo}`
                 }
-                
+
                 response.push((userObject))
             })
 
             return res.json({
                 text: "Liste des utilisateurs",
-                attachements: response
+                attachments: response
             })
         }
 
@@ -54,6 +53,8 @@ app.get('/', (req, res) => {
         if(typeof dbUser == 'undefined') {
             return res.send(`Aucun repo associé avec ${user}! Slap HIM!`)
         }
+
+        let response = []
 
         //Options pour le request
         let options = {
@@ -73,18 +74,19 @@ app.get('/', (req, res) => {
             //Mise en forme de la réponse sur slack
             data.body.forEach((key) => {
                 let message = {}
+                let commitDate = Date.parse(key.commit.author.date)
                 message.fallback = "Foo bar"
                 message.author_name = key.commit.author.name
                 message.title = key.commit.message
                 message.title_link = key.html_url
-                message.ts = key.commit.author.date
+                message.ts = commitDate / 1000
 
                 response.push(message)
             })
 
             return res.json({
-                text: "Liste des utilisateurs",
-                attachements: response
+                text: "Liste des commits",
+                attachments: response
             })
         })
     })
