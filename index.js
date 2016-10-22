@@ -1,28 +1,29 @@
 const app = require('express')()
-const token = ''
-const tokenSet = ''
 const request = require('request')
-
 const fs = require('fs')
+const sqlite3 = require("sqlite3").verbose()
+
+//Configuration
 const file = 'sqlite.db'
 const exists = fs.existsSync(file)
-const sqlite3 = require("sqlite3").verbose()
 const db = new sqlite3.Database(file)
-
-db.serialize(function () {
-    if (!exists) {
+const token = ''
+const tokenSet = ''
+db.serialize(function() {
+    if (!exists)
         db.run("CREATE TABLE users (name TEXT, repo TEXT)")
-    }
 })
 
 app.get('/', (req, res) => {
     // Vérification du token
-    if (req.param('token') !== token) {
+    if (req.param('token') !== token)
         return res.send('Token not valid')
-    }
 
     let user = req.param('text') //le nom d'utilsateur sur slack
     db.all('SELECT * FROM users', (err, row) => {
+        if (err)
+            return res.send(err)
+
         //Affichage de la liste des utilisateurs
         if (user === 'list') {
             let response = []
@@ -45,12 +46,11 @@ app.get('/', (req, res) => {
         }
 
         //Affichage des commits
-
         //Recherche d'utilisateur dans la DB
         let dbUser = row.find((row) => row.name === user)
 
         //Réponse si utilisateur est introuvable
-        if(typeof dbUser == 'undefined') {
+        if (typeof dbUser == 'undefined') {
             return res.send(`Aucun repo associé avec ${user}! Slap HIM!`)
         }
 
@@ -66,13 +66,13 @@ app.get('/', (req, res) => {
         }
 
         //Appel à l'API de Github
-        request(options, (status, data) => {
+        request(options, (error, result, data) => {
             //Contrôle si le repo existe
-            if (data.message === 'Not Found')
-                return res.send('Repo Introuvable')
+            if (error)
+                return res.send(`Repo Introuvable ${error}`)
 
             //Mise en forme de la réponse sur slack
-            data.body.forEach((key) => {
+            data.forEach((key) => {
                 let message = {}
                 let commitDate = Date.parse(key.commit.author.date)
                 message.fallback = "Foo bar"
@@ -93,7 +93,6 @@ app.get('/', (req, res) => {
 })
 
 //Enregistrement du repo
-
 app.get('/set', (req, res) => {
     // Vérification du token
     if (req.param('token') != tokenSet)
@@ -106,6 +105,9 @@ app.get('/set', (req, res) => {
     let update = `UPDATE 'users' SET repo = '${repo}' WHERE name = '${user}'`
 
     db.all('SELECT * FROM users', (err, row) => {
+        if (err)
+            return res.send(err)
+
         //Premier enregistrement si utilisateur n'existe pas
         if (row.length === 0) {
             db.run(insert)
