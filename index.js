@@ -1,7 +1,7 @@
 const app = require('express')()
 const fs = require('fs')
 const sqlite3 = require("sqlite3").verbose()
-const User = require('./list')
+const User = require('./user')
 
 //Configuration
 const file = 'sqlite.db'
@@ -41,14 +41,12 @@ app.get('/', (req, res) => {
 
         //Réponse si utilisateur est introuvable
         if (typeof dbUser == 'undefined') {
-            return res.send(`Aucun repo associé avec ${user}! Slap HIM!`)
+            return res.send(`Aucun repo associé avec ${user}!`)
         }
 
+        //Réponse json 
         user.fetchRepo(dbUser, (data) => {
-            return res.json({
-                text: "Liste des commits",
-                attachments: user.formatMessage(data)
-            })
+            return res.json(user.formatResponse(data))
         })
     })
 })

@@ -46,8 +46,11 @@ class User {
         })
     }
 
-    formatMessage(data) {
+    formatResponse(data) {
         //Mise en forme de la réponse sur slack
+        if (!data)
+            return 'Erreur lors du traitement de la réponse'
+
         data.forEach((key) => {
             this.commits.push({
                 fallback: "Foo bar",
@@ -57,7 +60,11 @@ class User {
                 ts: Date.parse(key.commit.author.date) / 1000
             })
         })
-        return this.commits
+
+        return {
+            text: "Liste des commits",
+            attachments: this.commits
+        }
     }
 }
 module.exports = User
